@@ -1,0 +1,18 @@
+services:
+    app:
+        build: .
+        ports:
+            - "3000:3000"
+        environment:
+            ROOT_URL: http://localhost:3000
+            MONGO_URL: mongodb://mongo:27017/meteor-wallet
+        depends_on:
+            - mongo
+
+    mongo:
+        image: mongo:7
+        volumes:
+            - mongo-data:/data/db
+
+volumes:
+    mongo-data:
