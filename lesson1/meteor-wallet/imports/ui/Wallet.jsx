@@ -1,22 +1,49 @@
 import React from "react";
 import { Modal } from "./components/Modal";
+import { SelectContact } from "./components/SelectContact";
+import { Loading } from "./components/Loading";
+import { useSubscribe, useFind } from "meteor/react-meteor-data";
+import { ContactsCollection } from "../api/ContactsCollection";
+import { Meteor } from "meteor/meteor";
+import { WalletsCollection } from "../api/WalletsCollection";
 
 export const Wallet = () => {
+    const isLoadingContacts = useSubscribe("contacts");
+    const isLoadingWallets = useSubscribe("wallets");
+    const contacts = useFind(() => ContactsCollection.find({ archived: { $ne: true } }, { sort: { createdAt: -1 } }));
+    const [wallet] = useFind(() => WalletsCollection.find());
+
     const [open, setOpen] = React.useState(false);
     const [isTransferring, setIsTransferring] = React.useState(false);
     const [amount, setAmount] = React.useState(0);
-    const [destinationWallet, setDestinationWallet] = React.useState("");
+    const [destinationWallet, setDestinationWallet] = React.useState({});
     const [errorMessage, setErrorMessage] = React.useState("");
 
-    const wallet = {
-        _id: "123123123",
-        balance: 5,
-        currency: "USD",
+    const addTransaction = () => {
+        Meteor.call(
+            "transactions.insert",
+            {
+                isTransferring,
+                sourceWalletId: wallet._id,
+                destinationWalletId: destinationWallet?.walletId || "",
+                amount: Number(amount),
+            },
+            (errorResponse) => {
+                if (errorResponse) {
+                    setErrorMessage(errorResponse.error);
+                } else {
+                    setOpen(false);
+                    setDestinationWallet({});
+                    setAmount(0);
+                    setErrorMessage("");
+                }
+            },
+        );
     };
 
-    const addTransaction = () => {
-        console.log("New transaction", amount, destinationWallet);
-    };
+    if (isLoadingContacts() || isLoadingWallets()) {
+        return <Loading />;
+    }
 
     return (
         <>
@@ -35,6 +62,7 @@ export const Wallet = () => {
                                 className="bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                                 onClick={() => {
                                     setIsTransferring(false);
+                                    setErrorMessage("");
                                     setOpen(true);
                                 }}
                             >
@@ -45,6 +73,7 @@ export const Wallet = () => {
                                 className="bg-indigo-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                                 onClick={() => {
                                     setIsTransferring(true);
+                                    setErrorMessage("");
                                     setOpen(true);
                                 }}
                             >
@@ -62,21 +91,12 @@ export const Wallet = () => {
                 body={
                     <>
                         {isTransferring && (
-                            <div>
-                                <label htmlFor="destination" className="block text-sm font-medium text-gray-700">
-                                    Destination wallet
-                                </label>
-                                <input
-                                    type="text"
-                                    id="destination"
-                                    value={destinationWallet}
-                                    onChange={(e) => setDestinationWallet(e.target.value)}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                />
+                            <div className="mt-2">
+                                <SelectContact title="Destination contact" contacts={contacts} contact={destinationWallet} setContact={setDestinationWallet} />
                             </div>
                         )}
 
-                        <div>
+                        <div className="mt-2">
                             <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
                                 Amount
                             </label>
@@ -84,6 +104,7 @@ export const Wallet = () => {
                                 type="number"
                                 id="amount"
                                 value={amount}
+                                min={0}
                                 onChange={(e) => setAmount(e.target.value)}
                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 placeholder="0.00"

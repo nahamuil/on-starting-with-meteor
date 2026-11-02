@@ -1,6 +1,6 @@
 import { Meteor } from "meteor/meteor";
 import { check } from "meteor/check";
-import { ContactsCollection } from "./ContactsCollection";
+import { ContactsCollection } from "./collections/ContactsCollection";
 
 Meteor.methods({
     "contacts.insert"({ name, email, imageUrl, walletId }) {
@@ -8,12 +8,15 @@ Meteor.methods({
         check(email, String);
         check(imageUrl, String);
         check(walletId, String);
+
         if (!name) {
             throw new Meteor.Error("Name is required.");
         }
+
         if (!walletId) {
             throw new Meteor.Error("Wallet ID is required.");
         }
+
         return ContactsCollection.insert({
             name,
             email,
