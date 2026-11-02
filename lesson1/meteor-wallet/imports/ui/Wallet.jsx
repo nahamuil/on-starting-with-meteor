@@ -1,18 +1,17 @@
+import { Meteor } from "meteor/meteor";
 import React from "react";
+import { useSubscribe, useFind } from "meteor/react-meteor-data";
 import { Modal } from "./components/Modal";
 import { SelectContact } from "./components/SelectContact";
+import { ContactsCollection } from "../api/collections/ContactsCollection";
+import { WalletsCollection } from "../api/collections/WalletsCollection";
 import { Loading } from "./components/Loading";
-import { useSubscribe, useFind } from "meteor/react-meteor-data";
-import { ContactsCollection } from "../api/ContactsCollection";
-import { Meteor } from "meteor/meteor";
-import { WalletsCollection } from "../api/WalletsCollection";
 
 export const Wallet = () => {
     const isLoadingContacts = useSubscribe("contacts");
     const isLoadingWallets = useSubscribe("wallets");
     const contacts = useFind(() => ContactsCollection.find({ archived: { $ne: true } }, { sort: { createdAt: -1 } }));
     const [wallet] = useFind(() => WalletsCollection.find());
-
     const [open, setOpen] = React.useState(false);
     const [isTransferring, setIsTransferring] = React.useState(false);
     const [amount, setAmount] = React.useState(0);
@@ -30,7 +29,13 @@ export const Wallet = () => {
             },
             (errorResponse) => {
                 if (errorResponse) {
-                    setErrorMessage(errorResponse.error);
+                    if (errorResponse.details) {
+                        errorResponse.details.forEach((error) => {
+                            setErrorMessage(error.message);
+                        });
+                    } else {
+                        setErrorMessage(errorResponse.error);
+                    }
                 } else {
                     setOpen(false);
                     setDestinationWallet({});

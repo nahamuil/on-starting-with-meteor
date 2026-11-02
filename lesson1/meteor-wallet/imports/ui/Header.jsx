@@ -8,7 +8,7 @@ export const Header = () => {
                     <div className="flex items-center">
                         <a href="#">
                             <span className="sr-only">Meteor Wallet</span>
-                            <img className="h-10 w-auto" src="/images/meteor-icon.png" alt="" />
+                            <img className="h-10 w-auto" src="/images/logo.png" alt="" />
                         </a>
                     </div>
                 </div>
